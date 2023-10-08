@@ -44,3 +44,4 @@ async def handler(files: List[UploadFile] = File(...)):
 @app.get("/", response_class=RedirectResponse)
 async def redirect_to_docs():
     return "/docs"
+>>>>>>> b1f6d91 (First Commit)
