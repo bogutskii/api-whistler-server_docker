@@ -7,11 +7,14 @@ COPY requirements.txt .
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git ffmpeg && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    pip3 install -r requirements.txt && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install -r requirements.txt && \
     pip3 install whisper && \
     rm -rf /root/.cache/pip/*
 
 COPY . .
 
-CMD uvicorn fastapi_app:app --host 0.0.0.0 --port $PORT
+ENV PORT=8000
+
+CMD uvicorn fastapi_app:app --host 0.0.0.0 --port ${PORT}

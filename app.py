@@ -1,4 +1,4 @@
-from flask import Flask, abort, request
+from flask import Flask, abort, request, jsonify
 from tempfile import NamedTemporaryFile
 import whisper
 import torch
@@ -12,22 +12,25 @@ app = Flask(__name__)
 
 @app.route("/")
 def hello():
-    return "Whisper Hello World!"
-
+    return "Whisper Here!"
 
 @app.route('/whisper', methods=['POST'])
 def handler():
-    if not request.files:
-        abort(400)
+    if 'file' not in request.files:
+        abort(400, description="No files were provided.")
 
     results = []
 
-    for filename, handle in request.files.items():
-        temp = NamedTemporaryFile()
-        handle.save(temp)
-        result = model.transcribe(temp.name)
-        results.append({
-            'filename': filename,
-            'transcript': result['text'],
-        })
-    return {'results': results}
+    for filename, file in request.files.items():
+        with NamedTemporaryFile(delete=True) as temp:
+            file.save(temp.name)
+            try:
+                result = model.transcribe(temp.name)
+                results.append({
+                    'filename': filename,
+                    'transcript': result['text'],
+                })
+            except Exception as e:
+                abort(500, description=f"Error during transcription: {e}")
+
+    return jsonify(results=results)
