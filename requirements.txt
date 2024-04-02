@@ -2,7 +2,3 @@ fastapi
 aiofiles
 python-multipart
 uvicorn
-whisper
-numba
-numpy
-torch

@@ -4,24 +4,15 @@ from tempfile import NamedTemporaryFile
 import whisper
 import torch
 from typing import List
-import asyncio
 
+# Checking if NVIDIA GPU is available
 torch.cuda.is_available()
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
+# Load the Whisper model:
+model = whisper.load_model("base", device=DEVICE)
+
 app = FastAPI()
-model = None
-
-
-async def load_model():
-    global model
-    model = whisper.load_model("base", device=DEVICE)
-
-
-@app.on_event("startup")
-async def startup_event():
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, load_model)
 
 
 @app.post("/whisper/")
@@ -29,16 +20,20 @@ async def handler(files: List[UploadFile] = File(...)):
     if not files:
         raise HTTPException(status_code=400, detail="No files were provided")
 
+    # For each file, let's store the results in a list of dictionaries.
     results = []
 
     for file in files:
+        # Create a temporary file.
         with NamedTemporaryFile(delete=True) as temp:
-            content = await file.read()
+            # Write the user's uploaded file to the temporary file.
             with open(temp.name, "wb") as temp_file:
-                temp_file.write(content)
+                temp_file.write(file.file.read())
 
+            # Let's get the transcript of the temporary file.
             result = model.transcribe(temp.name)
 
+            # Now we can store the result object for this file.
             results.append({
                 'filename': file.filename,
                 'transcript': result['text'],
@@ -47,6 +42,6 @@ async def handler(files: List[UploadFile] = File(...)):
     return JSONResponse(content={'results': results})
 
 
-@app.get("/", response_class=RedirectResponse, include_in_schema=False)
+@app.get("/", response_class=RedirectResponse)
 async def redirect_to_docs():
-    return RedirectResponse(url='/docs')
+    return "/docs"

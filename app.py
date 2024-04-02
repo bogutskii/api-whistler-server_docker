@@ -1,4 +1,4 @@
-from flask import Flask, abort, request, jsonify
+from flask import Flask, abort, request
 from tempfile import NamedTemporaryFile
 import whisper
 import torch
@@ -12,25 +12,33 @@ app = Flask(__name__)
 
 @app.route("/")
 def hello():
-    return "Whisper Here!"
+    return "Whisper Hello World!"
+
 
 @app.route('/whisper', methods=['POST'])
 def handler():
-    if 'file' not in request.files:
-        abort(400, description="No files were provided.")
+    if not request.files:
+        # If the user didn't submit any files, return a 400 (Bad Request) error.
+        abort(400)
 
+    # For each file, let's store the results in a list of dictionaries.
     results = []
 
-    for filename, file in request.files.items():
-        with NamedTemporaryFile(delete=True) as temp:
-            file.save(temp.name)
-            try:
-                result = model.transcribe(temp.name)
-                results.append({
-                    'filename': filename,
-                    'transcript': result['text'],
-                })
-            except Exception as e:
-                abort(500, description=f"Error during transcription: {e}")
+    # Loop over every file that the user submitted.
+    for filename, handle in request.files.items():
+        # Create a temporary file.
+        # The location of the temporary file is available in `temp.name`.
+        temp = NamedTemporaryFile()
+        # Write the user's uploaded file to the temporary file.
+        # The file will get deleted when it drops out of scope.
+        handle.save(temp)
+        # Let's get the transcript of the temporary file.
+        result = model.transcribe(temp.name)
+        # Now we can store the result object for this file.
+        results.append({
+            'filename': filename,
+            'transcript': result['text'],
+        })
 
-    return jsonify(results=results)
+    # This will be automatically converted to JSON.
+    return {'results': results}
