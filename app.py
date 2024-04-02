@@ -12,8 +12,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def hello():
-    return "Whisper Hello World!"
-
+    return "Whisper Here!"
 
 @app.route('/whisper', methods=['POST'])
 def handler():
