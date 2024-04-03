@@ -50,3 +50,12 @@ async def handler(files: List[UploadFile] = File(...)):
 @app.get("/", response_class=RedirectResponse, include_in_schema=False)
 async def redirect_to_docs():
     return RedirectResponse(url='/docs')
+
+
+@app.get("/change_model/")
+def change_model(model_name: str = Query(default="base", enum=["base", "small", "medium", "large"])):
+    try:
+        load_model(model_name)
+        return {"message": f"Model changed to {model_name}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
